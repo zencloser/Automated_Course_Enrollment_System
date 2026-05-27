@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACES — Automated Course Enrollment System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ══ LOGIN PAGE ══ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-mark">AC</div>
+      <div>
+        <div class="login-title">ACES</div>
+        <div class="login-sub">Shiv Nadar University</div>
+      </div>
+    </div>
+    <div class="login-heading">Welcome back</div>
+    <div class="login-desc">Sign in to the Automated Course Enrollment System. Your session is stored securely in the browser.</div>
+    <div class="login-form">
+      <div class="form-group"><label>Email address</label><input type="text" id="login-email" placeholder="yourname@snu.edu.in" autocomplete="email"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="remember-row"><input type="checkbox" id="remember-me"><label for="remember-me">Remember my email</label></div>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" onclick="doLogin()">Sign in</button>
+    </div>
+    <div class="login-hints">
+      <div class="login-hint-title">Demo credentials</div>
+      <div class="hint-row"><span class="hint-role">Admin</span><span>admin@snu.edu.in / admin123</span></div>
+      <div class="hint-row"><span class="hint-role">Student</span><span>kavya@snu.edu.in / 1</span></div>
+      <div class="hint-row"><span class="hint-role">Faculty</span><span>sonia@snu.edu.in / 1</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+<div class="shell">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="logo-mark">AC</div>
+      <div>
+        <div class="brand-name">ACES</div>
+        <div class="brand-sub">SNU &middot; DBMS 2026</div>
+      </div>
+    </div>
+    <div class="brand-tagline">Automated Course Enrollment System</div>
+  </div>
+
+  <div class="user-chip" id="user-chip">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <div>
+      <div class="user-name" id="user-name-chip">Loading...</div>
+      <div class="user-role" id="user-role-chip">—</div>
+    </div>
+  </div>
+
+  <nav class="nav" id="sidebar-nav"></nav>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="doLogout()">&#x2715; Sign out</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD (Admin/Faculty) -->
+<div id="page-dashboard" class="page">
+  <div class="topbar"><div><div class="page-title">Dashboard</div><div class="page-sub">system overview &middot; live data</div></div><div class="chip" id="dash-time">--:--</div></div>
+  <div class="stats-grid">
+    <div class="stat-card c-teal"><div class="stat-num" id="s-students">—</div><div class="stat-lbl"><span class="stat-dot" style="background:var(--accent-mid)"></span>Total students</div></div>
+    <div class="stat-card c-violet"><div class="stat-num" id="s-courses">—</div><div class="stat-lbl"><span class="stat-dot" style="background:#6B6EBB"></span>Active courses</div></div>
+    <div class="stat-card c-red"><div class="stat-num" id="s-alerts">—</div><div class="stat-lbl"><span class="stat-dot" style="background:var(--red)"></span>Unread alerts</div></div>
+    <div class="stat-card c-amber"><div class="stat-num" id="s-probation">—</div><div class="stat-lbl"><span class="stat-dot" style="background:var(--amber)"></span>On probation</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-enrollments">—</div><div class="stat-lbl">Active enrollments</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-waitlist">—</div><div class="stat-lbl">On waitlist</div></div>
+    <div class="stat-card c-teal"><div class="stat-num" id="s-certs">—</div><div class="stat-lbl"><span class="stat-dot" style="background:var(--accent-mid)"></span>Certificates</div></div>
+    <div class="stat-card c-violet"><div class="stat-num" id="s-cgpa">—</div><div class="stat-lbl"><span class="stat-dot" style="background:#6B6EBB"></span>Avg CGPA</div></div>
+  </div>
+  <div class="grid-2 section-gap">
+    <div class="card"><div class="card-title">Dept-wise performance</div><div class="chart-box"><canvas id="chart-dept"></canvas></div></div>
+    <div class="card"><div class="card-title">Attendance vs grade correlation</div><div class="chart-box"><canvas id="chart-corr"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-title">Top students by CGPA</div><div class="table-wrap"><table id="top-students-tbl"><thead><tr><th>#</th><th>Name</th><th>Dept</th><th>CGPA</th><th>Rank</th><th>Scholarship</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- STUDENT PORTAL (my dashboard) -->
+<div id="page-portal" class="page">
+  <div class="topbar"><div><div class="page-title">My portal</div><div class="page-sub">your personal academic dashboard</div></div></div>
+  <div class="portal-header">
+    <div class="portal-avatar" id="portal-avatar">?</div>
+    <div>
+      <div class="portal-name" id="portal-name">—</div>
+      <div class="portal-meta" id="portal-meta">—</div>
+    </div>
+    <div class="portal-stats">
+      <div class="portal-stat"><div class="portal-stat-num" id="portal-cgpa">—</div><div class="portal-stat-lbl">CGPA</div></div>
+      <div class="portal-stat"><div class="portal-stat-num" id="portal-scholarship" style="font-size:13px;margin-top:4px">—</div><div class="portal-stat-lbl">Scholarship</div></div>
+    </div>
+  </div>
+  <div id="portal-courses-list"></div>
+</div>
+
+<!-- STUDENTS -->
+<div id="page-students" class="page">
+  <div class="topbar"><div><div class="page-title">Students</div><div class="page-sub">all registered students</div></div></div>
+  <div class="search-bar"><input type="text" id="student-search" placeholder="Search by name or email..." oninput="filterStudents()"><select id="filter-probation" onchange="filterStudents()" style="max-width:200px"><option value="">All students</option><option value="1">On probation</option><option value="0">Not on probation</option></select></div>
+  <div class="card"><div class="table-wrap"><table id="students-tbl"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Dept</th><th>Program</th><th>CGPA</th><th>Batch</th><th>Probation</th><th>Action</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- COURSES -->
+<div id="page-courses" class="page">
+  <div class="topbar"><div><div class="page-title">Courses</div><div class="page-sub">all active courses</div></div></div>
+  <div class="card"><div class="table-wrap"><table id="courses-tbl"><thead><tr><th>Code</th><th>Name</th><th>Credits</th><th>Semester</th><th>Instructor</th><th>Seats</th><th>Fill</th><th>Action</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+<div id="page-course-detail" class="page">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Course Students</div>
+      <div class="page-sub">students in this course</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="goBackToCourses()">← Back</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Grade</th>
+            <th>Attendance</th>
+          </tr>
+        </thead>
+        <tbody id="course-detail-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ENROLLMENT -->
+<div id="page-enrollment" class="page">
+  <div class="topbar"><div><div class="page-title">Enrollment</div><div class="page-sub">enroll &middot; drop &middot; waitlist</div></div></div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Enroll a student</div>
+      <div class="form-group"><label>Student</label><select id="enroll-student"><option value="">Select student...</option></select></div>
+      <div class="form-group"><label>Course</label><select id="enroll-course"><option value="">Select course...</option></select></div>
+      <button class="btn btn-primary" onclick="enrollStudent()">Enroll / join waitlist</button>
+      <div id="enroll-result" style="margin-top:12px;font-size:12px;font-family:'IBM Plex Mono',monospace"></div>
+    </div>
+    <div class="card"><div class="card-title">Drop a course</div>
+      <div class="form-group"><label>Student</label><select id="drop-student"><option value="">Select student...</option></select></div>
+      <div class="form-group"><label>Course</label><select id="drop-course"><option value="">Select course...</option></select></div>
+      <button class="btn btn-red" onclick="dropCourse()">Drop course</button>
+      <div id="drop-result" style="margin-top:12px;font-size:12px;font-family:'IBM Plex Mono',monospace"></div>
+      <p style="font-size:10px;color:var(--text3);margin-top:10px;font-family:'IBM Plex Mono',monospace">trg_waitlist_promote fires on drop</p>
+    </div>
+  </div>
+  <div class="card gap-top"><div class="card-title">Course health overview</div><div class="table-wrap"><table id="health-tbl"><thead><tr><th>Code</th><th>Name</th><th>Max</th><th>Enrolled</th><th>Fill %</th><th>Dropouts</th><th>Avg grade</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- ATTENDANCE -->
+<div id="page-attendance" class="page">
+  <div class="topbar"><div><div class="page-title">Attendance</div><div class="page-sub">mark &middot; view &middot; trigger alerts</div></div></div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Mark attendance</div>
+      <div class="form-group"><label>Student</label><select id="att-student"><option value="">Select student...</option></select></div>
+      <div class="form-group"><label>Course</label><select id="att-course"><option value="">Select course...</option></select></div>
+      <div class="form-group"><label>Date</label><input type="date" id="att-date"></div>
+      <div class="form-group"><label>Status</label><select id="att-status"><option value="present">Present</option><option value="absent">Absent</option></select></div>
+      <button class="btn btn-primary" onclick="markAttendance()">Mark attendance</button>
+      <p style="font-size:10px;color:var(--text3);margin-top:10px;font-family:'IBM Plex Mono',monospace">trg_attendance_warning fires if &lt; 75%</p>
+    </div>
+    <div class="card"><div class="card-title">View attendance record</div>
+      <div class="form-group"><label>Student</label><select id="view-att-student"><option value="">Select student...</option></select></div>
+      <div class="form-group"><label>Course</label><select id="view-att-course"><option value="">Select course...</option></select></div>
+      <button class="btn btn-ghost" onclick="viewAttendance()">View record</button>
+      <div id="att-pct-display" style="margin-top:16px;font-size:34px;font-weight:600;font-family:'IBM Plex Mono',monospace"></div>
+      <div id="att-records" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTENDANCE CALCULATOR (Feature 3) -->
+<div id="page-att-calc" class="page">
+  <div class="topbar"><div><div class="page-title">Attendance calculator</div><div class="page-sub">how many classes can you miss?</div></div></div>
+  <div id="att-calc-body"><div class="empty">Loading your attendance data...</div></div>
+</div>
+
+<!-- GPA CALCULATOR (Feature 4) -->
+<div id="page-gpa-calc" class="page">
+  <div class="topbar"><div><div class="page-title">GPA calculator</div><div class="page-sub">what-if grade predictor &middot; reverse calculator</div></div></div>
+  <div class="grid-2">
+
+    <!-- LEFT: Enter Expected Grades -->
+    <div class="card">
+      <div class="card-title">Enter expected grades</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:14px;font-family:'IBM Plex Mono',monospace">
+        Pre-filled where DB grades exist. Edit freely for what-if scenarios.
+      </div>
+      <div id="gpa-calc-courses"><div class="empty">Loading courses...</div></div>
+      <div class="gpa-result-box" style="margin-top:16px">
+        <div class="gpa-result-num" id="gpa-predicted">—</div>
+        <div class="gpa-result-label">Predicted CGPA</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Reverse Calculator -->
+    <div class="card">
+      <div class="card-title">Reverse calculator</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:14px;font-family:'IBM Plex Mono',monospace">
+        What score do I need to hit my target CGPA?
+      </div>
+
+      <div class="form-group">
+        <label>Target CGPA</label>
+        <input type="number" id="target-cgpa" min="0" max="10" step="0.1" placeholder="e.g. 8.5" oninput="calcReverse()">
+      </div>
+
+      <div class="form-group">
+        <label>Single-course lookup</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="reverse-course" onchange="calcReverse()" style="flex:1"><option value="">Select course...</option></select>
+          <button class="btn btn-ghost btn-sm" id="reverse-show-all" onclick="calcReverseAll()" style="white-space:nowrap;flex-shrink:0">Show all</button>
+        </div>
+      </div>
+
+      <div id="reverse-result" style="margin-top:12px">
+        <div id="reverse-mode-a"></div>
+        <div id="reverse-mode-b"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- GRADES -->
+<div id="page-grades" class="page">
+  <div class="topbar"><div><div class="page-title">Grades & progress</div><div class="page-sub">update &middot; audit &middot; at-risk detection</div></div></div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Update grade</div>
+      <div class="form-group"><label>Student</label><select id="grade-student"><option value="">Select student...</option></select></div>
+      <div class="form-group"><label>Course</label><select id="grade-course"><option value="">Select course...</option></select></div>
+      <div class="form-group"><label>Grade (0-100)</label><input type="number" id="grade-val" min="0" max="100" placeholder="e.g. 78.5"></div>
+      <div class="form-group"><label>Completion %</label><input type="number" id="completion-val" min="0" max="100" placeholder="e.g. 90"></div>
+      <button class="btn btn-primary" onclick="updateGrade()">Update grade</button>
+      <div id="grade-result" style="margin-top:12px;font-size:12px;font-family:'IBM Plex Mono',monospace"></div>
+      <p style="font-size:10px;color:var(--text3);margin-top:8px;font-family:'IBM Plex Mono',monospace">completion=100 + grade&ge;40 &rarr; trg_certificate_issue</p>
+    </div>
+    <div class="card"><div class="card-title">Grade history (audit log)</div>
+      <div class="form-group"><label>Student</label><select id="hist-student"><option value="">Select student...</option></select></div>
+      <div class="form-group"><label>Course</label><select id="hist-course"><option value="">Select course...</option></select></div>
+      <button class="btn btn-ghost" onclick="viewGradeHistory()">View history</button>
+      <div id="grade-history" style="margin-top:14px"></div>
+    </div>
+  </div>
+  <div class="card gap-top"><div class="card-title">At-risk students</div><div class="table-wrap"><table id="risk-tbl"><thead><tr><th>Student</th><th>Course</th><th>Grade</th><th>Attendance</th><th>Risk</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- PAYMENTS -->
+<div id="page-payments" class="page">
+  <div class="topbar"><div><div class="page-title">Payments</div><div class="page-sub">fee tracking &middot; installments &middot; fee structure</div></div>
+    <div id="pay-actions-bar" style="display:flex;gap:8px"></div>
+  </div>
+
+  <!-- Student portal: fee summary + pay button -->
+  <div id="student-fee-summary" style="display:none;margin-bottom:18px">
+    <div class="grid-2">
+      <div class="card" style="background:var(--accent-light);border-color:rgba(59,108,183,0.2)">
+        <div class="card-title">My fee summary</div>
+        <div id="fee-summary-body"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Fee breakdown — <span id="fee-dept-label" style="color:var(--accent-mid)">—</span></div>
+        <div id="fee-breakdown-body"></div>
+      </div>
+    </div>
+    <div class="card gap-top" style="background:rgba(255,95,95,0.03);border-color:rgba(255,95,95,0.15)" id="due-alert-bar" style="display:none"></div>
+  </div>
+
+  <!-- Admin/faculty: department summary tabs -->
+  <div id="admin-pay-tabs" style="display:none;margin-bottom:18px">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="dept-tab-btns"></div>
+    <div id="dept-pay-content"></div>
+  </div>
+
+  <!-- Student selector (admin/faculty only) -->
+  <div id="admin-student-selector" class="card" style="display:none;margin-bottom:16px">
+    <div class="form-group" style="max-width:360px;margin-bottom:0"><label>Select student to view payments</label><select id="pay-student" onchange="loadPayments()"><option value="">Select student...</option></select></div>
+  </div>
+
+  <div class="card" id="payments-main-card">
+    <div class="table-wrap"><table id="payments-tbl"><thead><tr><th>Course</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Date</th><th>Installments</th></tr></thead><tbody><tr><td colspan="7" class="empty">Select a student to view payments.</td></tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div id="page-reports" class="page">
+  <div class="topbar"><div><div class="page-title">Reports</div><div class="page-sub">analytics &middot; stored procedures &middot; scholarship</div></div></div>
+  <div class="grid-2 section-gap">
+    <div class="card"><div class="card-title">Scholarship eligibility</div><div class="table-wrap"><table id="scholar-tbl"><thead><tr><th>Student</th><th>Dept</th><th>CGPA</th><th>Tier</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><div class="card-title">Course recommendations</div>
+      <div class="form-group"><label>Student</label><select id="rec-student" onchange="loadRecommendations()"><option value="">Select student...</option></select></div>
+      <div id="rec-results" class="empty">Select a student</div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Semester report — sp_semester_report</div>
+    <div class="inline-form"><div class="form-group"><label>Course</label><select id="report-course"><option value="">Select course...</option></select></div><button class="btn btn-violet" onclick="loadSemReport()">Generate</button></div>
+    <div class="table-wrap"><table id="semreport-tbl"><thead><tr><th>Student</th><th>Grade</th><th>Completion %</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div id="page-alerts" class="page">
+  <div class="topbar"><div><div class="page-title">Alerts</div><div class="page-sub">trigger-generated notifications</div></div><button class="btn btn-ghost btn-sm" onclick="loadAlerts()">Refresh</button></div>
+  <div class="card"><div class="table-wrap"><table id="alerts-tbl"><thead><tr><th>Student</th><th>Course</th><th>Type</th><th>Severity</th><th>Message</th><th>Time</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- HELPLINE (Feature 5) -->
+<div id="page-helpline" class="page">
+  <div class="topbar"><div><div class="page-title">Help & contact</div><div class="page-sub">academic helpline &middot; department contacts &middot; FAQ</div></div></div>
+
+  <div class="emergency-banner">
+    <div class="emergency-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--accent-mid)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.99 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 013.92 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+    <div class="emergency-text"><strong>Academic Helpline: +91-7068361536</strong>Monday – Saturday, 9:00 AM to 5:30 PM IST. For urgent academic emergencies contact the Registrar directly.</div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-section-title">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--accent-mid)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Department contacts
+    </div>
+    <div class="contact-grid">
+      <div class="contact-card"><div class="contact-dept">Computer Science</div><div class="contact-name">Dr. Anil Sharma</div><div class="contact-info"><span>&#9742; 0120-233-4501</span><a href="mailto:hod.cse@snu.edu.in">hod.cse@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Electronics Engineering</div><div class="contact-name">Dr. Priya Mehta</div><div class="contact-info"><span>&#9742; 0120-233-4502</span><a href="mailto:hod.ece@snu.edu.in">hod.ece@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Mathematics</div><div class="contact-name">Dr. Ramesh Gupta</div><div class="contact-info"><span>&#9742; 0120-233-4503</span><a href="mailto:hod.math@snu.edu.in">hod.math@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Physics</div><div class="contact-name">Dr. Sunita Rao</div><div class="contact-info"><span>&#9742; 0120-233-4504</span><a href="mailto:hod.phy@snu.edu.in">hod.phy@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Mechanical Engineering</div><div class="contact-name">Dr. Vikram Singh</div><div class="contact-info"><span>&#9742; 0120-233-4505</span><a href="mailto:hod.mech@snu.edu.in">hod.mech@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Exam Controller</div><div class="contact-name">Mr. Rajan Pillai</div><div class="contact-info"><span>&#9742; 0120-233-4510</span><a href="mailto:examcontroller@snu.edu.in">examcontroller@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Registrar Office</div><div class="contact-name">Ms. Kavitha Nair</div><div class="contact-info"><span>&#9742; 0120-233-4511</span><a href="mailto:registrar@snu.edu.in">registrar@snu.edu.in</a></div></div>
+      <div class="contact-card"><div class="contact-dept">Fee Department</div><div class="contact-name">Mr. Sanjay Dubey</div><div class="contact-info"><span>&#9742; 0120-233-4520</span><a href="mailto:fees@snu.edu.in">fees@snu.edu.in</a></div></div>
+    </div>
+  </div>
+
+  <div class="help-section">
+    <div class="help-section-title">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#6B6EBB" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+      Frequently asked questions
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">How do I enroll in a course?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">Go to the Enrollment section in the sidebar. Select your name and the course you wish to join, then click "Enroll / join waitlist". If the course is full, you will be automatically added to the waitlist.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">What happens when my attendance drops below 75%?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">An automatic alert is generated by the database trigger trg_attendance_warning and sent to the Alerts panel. You may be barred from exams if attendance remains below 75% at the end of the semester.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">How is my CGPA calculated?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">CGPA is computed using the credit-weighted formula: Sum of (Grade/10 × Credits) divided by Total Credits, across all enrolled courses. Use the GPA Calculator tool in the sidebar to estimate your predicted CGPA.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">When are certificates issued?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">Certificates are auto-issued by the trg_certificate_issue trigger when your completion percentage reaches 100% and your grade is 40 or above. You can find your certificates in the Grades section.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">How can I pay my course fees in installments?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">Visit the Payments section, select your name, and click "View" against any course to see the installment schedule. Contact the Fee Department at fees@snu.edu.in if you need to set up a new installment plan.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">How does the waitlist work?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">When a course is full, you are placed on the waitlist. When any enrolled student drops the course, the trg_waitlist_promote trigger automatically promotes the highest-priority student (senior students first, then by position).</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">What scholarship tiers are available?<span class="faq-arrow">&#x25BC;</span></div><div class="faq-a">Scholarships are awarded based on CGPA: Gold (9.0+), Silver (8.0–8.9), Bronze (7.0–7.9). Results are computed live using the fn_scholarship_tier database function. Visit the Reports section to see all eligible students.</div></div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+</div><!-- end .shell -->
+</div><!-- end #app -->
+
+<div id="toast"></div>
+
+<!-- STUDENT MODAL -->
+<div class="modal-overlay" id="modal-student" onclick="closeModal('modal-student')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="modal-student-name">Student profile</div><button class="modal-close" onclick="closeModal('modal-student')">&#x2715;</button></div>
+    <div style="margin-bottom:20px"><div class="modal-section-title">Profile info</div><div id="modal-student-info"></div></div>
+    <div><div class="modal-section-title">Enrolled courses</div><div id="modal-student-courses"></div></div>
+  </div>
+</div>
+
+<!-- INSTALLMENTS MODAL -->
+<div class="modal-overlay" id="modal-installments" onclick="closeModal('modal-installments')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title">Payment installments</div><button class="modal-close" onclick="closeModal('modal-installments')">&#x2715;</button></div>
+    <div id="modal-installments-body"></div>
+  </div>
+</div>
+
+<!-- PAY NOW MODAL -->
+<div class="modal-overlay" id="modal-pay" onclick="closeModal('modal-pay')">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Make a payment</div>
+      <button class="modal-close" onclick="closeModal('modal-pay')">&#x2715;</button>
+    </div>
+    <div id="modal-pay-body">
+      <div class="modal-section-title">Payment details</div>
+      <div id="pay-outstanding-info" style="background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:12px;font-family:'IBM Plex Mono',monospace;line-height:1.7"></div>
+      <div class="form-group"><label>Amount to pay (₹)</label><input type="number" id="pay-amount-input" min="1" step="100" placeholder="e.g. 100000"></div>
+      <div class="form-group"><label>Payment method</label>
+        <select id="pay-method">
+          <option value="upi">UPI</option>
+          <option value="netbanking">Net Banking</option>
+          <option value="card">Debit / Credit Card</option>
+          <option value="dd">Demand Draft</option>
+          <option value="cash">Cash at counter</option>
+        </select>
+      </div>
+      <div id="pay-upi-section">
+        <div class="form-group"><label>UPI ID</label><input type="text" id="pay-upi-id" placeholder="yourname@upi"></div>
+      </div>
+      <div id="pay-card-section" style="display:none">
+        <div class="form-group"><label>Card number</label><input type="text" id="pay-card-num" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>Expiry</label><input type="text" id="pay-card-exp" placeholder="MM/YY" maxlength="5"></div>
+          <div class="form-group"><label>CVV</label><input type="text" id="pay-card-cvv" placeholder="XXX" maxlength="3"></div>
+        </div>
+      </div>
+      <div id="pay-dd-section" style="display:none">
+        <div class="form-group"><label>DD number</label><input type="text" id="pay-dd-num" placeholder="DD reference number"></div>
+      </div>
+      <div id="pay-modal-result" style="margin-top:12px;font-size:12px;font-family:'IBM Plex Mono',monospace;min-height:20px"></div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn btn-primary" style="flex:1;font-size:14px" onclick="submitPayment()">Pay now</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-pay')">Cancel</button>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:10px;text-align:center;font-family:'IBM Plex Mono',monospace">
+        &#x1F512; Secured by SNU Fee Portal · All transactions encrypted
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEE STRUCTURE MODAL (admin) -->
+<div class="modal-overlay" id="modal-fee-struct" onclick="closeModal('modal-fee-struct')">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">Fee structure — all departments</div>
+      <button class="modal-close" onclick="closeModal('modal-fee-struct')">&#x2715;</button>
+    </div>
+    <div id="modal-fee-struct-body"></div>
+  </div>
+</div>
+
+<!-- PENDING STUDENTS MODAL -->
+<div id="pending-modal" style="
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.6);
+  z-index:999;
+  justify-content:center;
+  align-items:center;
+">
+  <div style="
+    background:#fff;
+    padding:20px;
+    border-radius:10px;
+    width:400px;
+    max-height:70%;
+    overflow:auto;
+  ">
+    <h3 style="margin-bottom:10px">Pending Students</h3>
+
+    <div id="pending-list"></div>
+
+    <button class="btn btn-ghost btn-sm" onclick="closePendingModal()">
+      Close
+    </button>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
