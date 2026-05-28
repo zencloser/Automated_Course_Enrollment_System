@@ -1,11 +1,15 @@
 import mysql.connector
 import os
+from dotenv import load_dotenv
+
+# Load .env from the project root (one level above backend/)
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
+    "host":     os.getenv("DB_HOST", "localhost"),
+    "user":     os.getenv("DB_USER", "root"),
     "password": os.getenv("DB_PASSWORD", ""),
-    "database": "mydb"
+    "database": os.getenv("DB_NAME", "mydb")
 }
 
 def get_db():

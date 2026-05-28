@@ -2,6 +2,9 @@ from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from datetime import datetime, date
 import os
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 from routes.auth_routes import auth_bp
 from routes.student_routes import student_bp
@@ -13,7 +16,7 @@ from routes.other_routes import other_bp
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-app.secret_key = os.getenv("SECRET_KEY", "aces_snu_2026_secret")
+app.secret_key = os.getenv("SECRET_KEY", "fallback_dev_key_change_this")
 
 class CustomJSONProvider(app.json_provider_class):
     def default(self, obj):
