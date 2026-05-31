@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from datetime import date
 from services.db import get_db, query
+from services.validators import validate_payment
 
 payment_bp = Blueprint('payment', __name__)
 
@@ -247,6 +248,12 @@ def make_payment():
     """Process a payment for a student"""
 
     data = request.get_json()
+    
+    # ── Validate first ──
+    is_valid, errors = validate_payment(data)
+    if not is_valid:
+        return jsonify({"error": errors[0]}), 400
+    
     if not data or not all(k in data for k in ['student_id', 'amount', 'payment_method']):
         return jsonify({"error": "student_id, amount, payment_method required"}), 400
 

@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from services.db import query
-from services.auth_utils import hash_password, check_password
+from services.auth_utils import check_password
+from services.validators import validate_login, sanitize_email
 import os
 
 auth_bp = Blueprint('auth', __name__)
@@ -8,17 +9,17 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
-    if not data or 'email' not in data or 'password' not in data:
-        return jsonify({"error": "Email and password required"}), 400
 
-    email    = data['email'].strip().lower()
+    # ── Validate input first ──
+    is_valid, errors = validate_login(data)
+    if not is_valid:
+        return jsonify({"error": errors[0]}), 400
+
+    # Sanitize after validation
+    email    = sanitize_email(data['email'])
     password = data['password'].strip()
 
-    if not email or not password:
-        return jsonify({"error": "Email and password required"}), 400
-
     # ── Admin login ──
-    # Admin credentials come from .env only — nothing hardcoded
     if email == 'admin@snu.edu.in':
         admin_password = os.getenv("ADMIN_PASSWORD", "")
         if not admin_password:
@@ -29,17 +30,12 @@ def login():
             session['full_name'] = 'System Admin'
             session['role']      = 'Admin'
             return jsonify({
-                "status":    "ok",
-                "user_type": "admin",
-                "user_id":   0,
-                "full_name": "System Admin",
-                "role":      "Admin"
+                "status": "ok", "user_type": "admin",
+                "user_id": 0, "full_name": "System Admin", "role": "Admin"
             })
-        # Wrong password — return same error as below (don't leak info)
         return jsonify({"error": "Invalid email or password"}), 401
 
     # ── Student login ──
-    # Password is fetched from DB and compared using bcrypt
     rows = query(
         "SELECT student_id, full_name, password FROM Student WHERE LOWER(email)=%s",
         (email,)
@@ -53,16 +49,13 @@ def login():
             session['full_name'] = s['full_name']
             session['role']      = 'Student'
             return jsonify({
-                "status":    "ok",
-                "user_type": "student",
-                "user_id":   s['student_id'],
-                "full_name": s['full_name'],
-                "role":      "Student"
+                "status": "ok", "user_type": "student",
+                "user_id": s['student_id'],
+                "full_name": s['full_name'], "role": "Student"
             })
         return jsonify({"error": "Invalid email or password"}), 401
 
     # ── Instructor login ──
-    # Password is fetched from DB and compared using bcrypt
     rows = query(
         "SELECT instructor_id, full_name, password FROM Instructor WHERE LOWER(email)=%s",
         (email,)
@@ -76,11 +69,9 @@ def login():
             session['full_name'] = i['full_name']
             session['role']      = 'Instructor'
             return jsonify({
-                "status":    "ok",
-                "user_type": "instructor",
-                "user_id":   i['instructor_id'],
-                "full_name": i['full_name'],
-                "role":      "Instructor"
+                "status": "ok", "user_type": "instructor",
+                "user_id": i['instructor_id'],
+                "full_name": i['full_name'], "role": "Instructor"
             })
         return jsonify({"error": "Invalid email or password"}), 401
 
