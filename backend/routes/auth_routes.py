@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request, session, current_app
 from services.db import query
 from services.auth_utils import check_password
 from services.validators import validate_login, sanitize_email
@@ -8,6 +8,12 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/api/login', methods=['POST'])
 def login():
+    # ── Rate limit this route strictly ──
+    # Only 5 attempts per minute per IP address
+    # This runs on every login attempt
+    limiter = current_app.limiter
+    limiter.limit("5 per minute")(lambda: None)()
+
     data = request.get_json()
 
     # ── Validate input first ──
@@ -30,8 +36,12 @@ def login():
             session['full_name'] = 'System Admin'
             session['role']      = 'Admin'
             return jsonify({
-                "status": "ok", "user_type": "admin",
-                "user_id": 0, "full_name": "System Admin", "role": "Admin"
+                "status": "ok", 
+                "user_type": "admin",
+                "user_id": 0, 
+                "full_name": 
+                "System Admin", 
+                "role": "Admin"
             })
         return jsonify({"error": "Invalid email or password"}), 401
 
@@ -49,9 +59,11 @@ def login():
             session['full_name'] = s['full_name']
             session['role']      = 'Student'
             return jsonify({
-                "status": "ok", "user_type": "student",
+                "status": "ok", 
+                "user_type": "student",
                 "user_id": s['student_id'],
-                "full_name": s['full_name'], "role": "Student"
+                "full_name": s['full_name'], 
+                "role": "Student"
             })
         return jsonify({"error": "Invalid email or password"}), 401
 
@@ -69,9 +81,11 @@ def login():
             session['full_name'] = i['full_name']
             session['role']      = 'Instructor'
             return jsonify({
-                "status": "ok", "user_type": "instructor",
+                "status": "ok", 
+                "user_type": "instructor",
                 "user_id": i['instructor_id'],
-                "full_name": i['full_name'], "role": "Instructor"
+                "full_name": i['full_name'], 
+                "role": "Instructor"
             })
         return jsonify({"error": "Invalid email or password"}), 401
 

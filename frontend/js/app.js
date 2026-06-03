@@ -21,14 +21,35 @@ async function doLogin(){
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value.trim();
   const err=document.getElementById('login-error');
+  const btn=document.querySelector('.login-btn');
   err.textContent='';
   if(!email||!pass){err.textContent='Please enter email and password.';return;}
+
   const res=await api('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
-  if(!res||res.error){err.textContent=res?.error||'Login failed.';return;}
-  if(document.getElementById('remember-me').checked)localStorage.setItem('aces_email',email);
-  currentUser=res;
-  startApp(res);
-}
+
+  // ── Handle rate limit (429) specially ──
+  if(!res){err.textContent='Login failed. Please try again.';return;}
+  if(res.retry_after){
+    // Show countdown timer
+    let seconds = 60;
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    const countdown = setInterval(()=>{
+      err.textContent = `Too many attempts. Try again in ${seconds}s`;
+      err.style.color = 'var(--red)';
+      seconds--;
+      if(seconds < 0){
+        clearInterval(countdown);
+        err.textContent = '';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
+    }, 1000);
+    return;
+  }
+  if(res.error){err.textContent=res?.error||'Login failed.';return;}}
 
 async function doLogout(){
   await api('/logout',{method:'POST'});
